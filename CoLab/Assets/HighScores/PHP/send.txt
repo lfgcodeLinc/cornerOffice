@@ -1,0 +1,36 @@
+<?php
+	include('ServerConnect.php');
+	$connection = Connect(); //Attempt to Connect to MYSQL Server & DataBase
+	
+	//Get variables from Unity
+	$table = $_POST['table'];
+	$name = $_POST['name'];
+	$score = $_POST['score'];
+	$updating = $_POST['updating'];
+	$date = strtotime(date("Y-m-d")); //Get Time
+	//Security Check
+	$hash = $_POST['hash'];
+	if(CheckKey($hash,$name) == 'fail'){ //Check if hash is valid
+		echo 'Security Failure'; exit;
+	}
+		//Make sure all input is sql injection safe
+	$name =  CleanInput($name);
+	$table = CleanInput($table);
+	$score =  CleanInput($score);
+	$updating =  CleanInput($updating);
+	//Run Query (inser or update)
+	if($updating == 0){ //Free entry So make new row
+		$sql = "INSERT INTO $table (name,score,date)
+		VALUES('$name','$score','$date')";
+	}else{ //We are updating a previously registered user
+		$sql = "UPDATE $table SET score = '$score',
+		date = '$date' WHERE name = '$name'";
+	}
+	$result = mysql_query($sql) or Die('Query failed: ' . mysql_error()); 
+	
+	//Now update our table, by ordering it by descending score
+	$sql = "ALTER TABLE $table ORDER BY score DESC,id DESC";
+	$result = mysql_query($sql) or Die('Query failed: ' . mysql_error()); 
+	
+	echo 'Accepted';
+?>
